@@ -1,39 +1,63 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {View, Text, Button, Image, StyleSheet} from 'react-native';
-import TrackPlayer, {usePlaybackState} from 'react-native-track-player';
+import TrackPlayer, {
+  useTrackPlayerEvents,
+  TrackPlayerEvents,
+} from 'react-native-track-player';
 
 export default function App() {
-  const [playerState, setPlayerState] = useState(null);
+  const [playbackState, setPlaybackState] = useState(null);
+  const [buttonText, setButtonText] = useState('Play');
 
   useEffect(() => {
     const startPlayer = async () => {
-      await TrackPlayer.setupPlayer();
+      try {
+        // Check if player is already initialized
+        const isPlayerInitialized = await TrackPlayer.isInitialized();
+        if (!isPlayerInitialized) {
+          await TrackPlayer.setupPlayer();
+          console.log('Player is set up');
+        }
 
-      await TrackPlayer.add({
-        id: 'trackID',
-        url: require('./track.mp3').uri,
-        title: 'Track Title',
-        artist: 'Track Artist',
-        artwork: require('./album.jpeg'),
-      });
+        await TrackPlayer.add({
+          id: 'trackID',
+          url: require('./track.mp3').uri,
+          title: 'Track Title',
+          artist: 'Track Artist',
+          artwork: require('./album.jpeg'),
+        });
 
-      TrackPlayer.play();
+        const playbackStateSubscription = TrackPlayer.addEventListener(
+          'playback-state',
+          ({state}) => {
+            setPlaybackState(state);
+            if (state === TrackPlayer.STATE_PLAYING) {
+              setButtonText('Pause');
+            } else {
+              setButtonText('Play');
+            }
+          },
+        );
+
+        TrackPlayer.play();
+
+        return () => {
+          TrackPlayer.removeEventListener(
+            'playback-state',
+            playbackStateSubscription,
+          );
+        };
+      } catch (error) {
+        console.error('Error setting up player:', error);
+      }
     };
 
     startPlayer();
   }, []);
 
-  useEffect(() => {
-    const fetchPlayerState = async () => {
-      const state = await TrackPlayer.getState();
-      setPlayerState(state);
-    };
-
-    fetchPlayerState();
-  }, [playerState]);
-
   const onButtonPress = async () => {
-    if (playerState === TrackPlayer.STATE_PLAYING) {
+    console.log('played');
+    if (playbackState === TrackPlayer.STATE_PLAYING) {
       await TrackPlayer.pause();
     } else {
       await TrackPlayer.play();
@@ -44,7 +68,7 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Track Title</Text>
       <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
-      <Button title="Play/Pause" onPress={onButtonPress} />
+      <Button title={buttonText} onPress={onButtonPress} />
     </View>
   );
 }
