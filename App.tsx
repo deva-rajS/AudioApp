@@ -1,66 +1,66 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, Button, Image, StyleSheet} from 'react-native';
-import TrackPlayer, {
-  useTrackPlayerEvents,
-  TrackPlayerEvents,
-} from 'react-native-track-player';
+var Sound = require('react-native-sound');
+let whoosh;
 
 export default function App() {
-  const [playbackState, setPlaybackState] = useState(null);
   const [buttonText, setButtonText] = useState('Play');
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    const startPlayer = async () => {
-      try {
-        // Check if player is already initialized
-        const isPlayerInitialized = await TrackPlayer.isInitialized();
-        if (!isPlayerInitialized) {
-          await TrackPlayer.setupPlayer();
-          console.log('Player is set up');
-        }
-
-        await TrackPlayer.add({
-          id: 'trackID',
-          url: require('./track.mp3').uri,
-          title: 'Track Title',
-          artist: 'Track Artist',
-          artwork: require('./album.jpeg'),
-        });
-
-        const playbackStateSubscription = TrackPlayer.addEventListener(
-          'playback-state',
-          ({state}) => {
-            setPlaybackState(state);
-            if (state === TrackPlayer.STATE_PLAYING) {
-              setButtonText('Pause');
-            } else {
-              setButtonText('Play');
-            }
-          },
-        );
-
-        TrackPlayer.play();
-
-        return () => {
-          TrackPlayer.removeEventListener(
-            'playback-state',
-            playbackStateSubscription,
-          );
-        };
-      } catch (error) {
-        console.error('Error setting up player:', error);
+    return () => {
+      if (whoosh) {
+        whoosh.release();
       }
     };
-
-    startPlayer();
   }, []);
 
+  const start = () => {
+    Sound.setCategory('Playback');
+    console.log('play');
+    whoosh = new Sound(
+      'https://file-examples.com/storage/fe83b11fb06553bbba686e7/2017/11/file_example_MP3_700KB.mp3',
+      '',
+      error => {
+        console.log('playing');
+        if (error) {
+          console.log('failed to load the sound', error);
+          return;
+        }
+        console.log(
+          'duration in seconds: ' +
+            whoosh.getDuration() +
+            'number of channels: ' +
+            whoosh.getNumberOfChannels(),
+        );
+        console.log('played');
+        setIsPlaying(true);
+        whoosh.play(success => {
+          if (success) {
+            console.log('successfully finished playing');
+            setIsPlaying(false);
+          } else {
+            console.log('playback failed due to audio decoding errors');
+          }
+        });
+      },
+    );
+  };
+
+  const pause = () => {
+    whoosh.pause(() => {
+      setIsPlaying(false);
+      console.log('paused');
+    });
+  };
+
   const onButtonPress = async () => {
-    console.log('played');
-    if (playbackState === TrackPlayer.STATE_PLAYING) {
-      await TrackPlayer.pause();
+    if (isPlaying) {
+      pause();
+      setButtonText('Play');
     } else {
-      await TrackPlayer.play();
+      start();
+      setButtonText('Pause');
     }
   };
 
