@@ -1,57 +1,99 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {View, Text, Button, Image, StyleSheet} from 'react-native';
+import Slider from '@react-native-community/slider';
+
+// var Slider = require('react-native-slider');
 var Sound = require('react-native-sound');
-let whoosh;
 
 export default function App() {
   const [buttonText, setButtonText] = useState('Play');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [resumePosition, setResumePosition] = useState(0);
+  const whoosh = useRef(null);
 
   useEffect(() => {
     return () => {
-      if (whoosh) {
-        whoosh.release();
+      if (whoosh.current) {
+        whoosh.current.release();
       }
     };
   }, []);
 
   const start = () => {
     Sound.setCategory('Playback');
-    console.log('play');
-    whoosh = new Sound(
-      'https://file-examples.com/storage/fe83b11fb06553bbba686e7/2017/11/file_example_MP3_700KB.mp3',
+    whoosh.current = new Sound(
+      'https://file-examples.com/storage/fe02dbc794655b5e699ae4d/2017/11/file_example_MP3_700KB.mp3',
       '',
       error => {
-        console.log('playing');
         if (error) {
           console.log('failed to load the sound', error);
           return;
         }
-        console.log(
-          'duration in seconds: ' +
-            whoosh.getDuration() +
-            'number of channels: ' +
-            whoosh.getNumberOfChannels(),
-        );
-        console.log('played');
+        setDuration(whoosh.current.getDuration());
         setIsPlaying(true);
-        whoosh.play(success => {
-          if (success) {
-            console.log('successfully finished playing');
-            setIsPlaying(false);
-          } else {
-            console.log('playback failed due to audio decoding errors');
-          }
-        });
+        if (resumePosition > 0) {
+          // If there is a resume position, set it and resume
+          whoosh.current.setCurrentTime(resumePosition);
+          whoosh.current.play(success => {
+            if (success) {
+              setIsPlaying(false);
+              setCurrentTime(0); // Reset currentTime when playback completes
+              whoosh.current.release(); // Release resources
+            } else {
+              console.log('playback failed due to audio decoding errors');
+            }
+          });
+        } else {
+          // If no resume position, start from the beginning
+          whoosh.current.play(success => {
+            if (success) {
+              setIsPlaying(false);
+              setCurrentTime(0); // Reset currentTime when playback completes
+              whoosh.current.release(); // Release resources
+            } else {
+              console.log('playback failed due to audio decoding errors');
+            }
+          });
+        }
       },
     );
+    const id = setInterval(() => {
+      whoosh.current.getCurrentTime(seconds => {
+        setCurrentTime(seconds);
+      });
+    }, 1000);
+    return () => {
+      clearInterval(id);
+    };
   };
 
   const pause = () => {
-    whoosh.pause(() => {
-      setIsPlaying(false);
-      console.log('paused');
-    });
+    if (whoosh.current) {
+      whoosh.current.pause(() => {
+        setIsPlaying(false);
+        setResumePosition(currentTime);
+      });
+    }
+  };
+
+  const stop = () => {
+    if (whoosh.current) {
+      whoosh.current.stop(() => {
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setResumePosition(0);
+      });
+    }
+  };
+
+  const seek = value => {
+    if (whoosh.current) {
+      const newPosition = value * duration;
+      whoosh.current.setCurrentTime(newPosition);
+      setCurrentTime(newPosition);
+    }
   };
 
   const onButtonPress = async () => {
@@ -68,7 +110,19 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Track Title</Text>
       <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
-      <Button title={buttonText} onPress={onButtonPress} />
+      <Slider
+        style={{width: 200}}
+        minimumValue={0}
+        maximumValue={1}
+        value={currentTime / duration}
+        onSlidingComplete={seek}
+      />
+      <Text>{`${Math.floor(currentTime)} / ${Math.floor(duration)}`}</Text>
+      <View style={styles.buttonContainer}>
+        <Button title="Previous" onPress={stop} />
+        <Button title={buttonText} onPress={onButtonPress} />
+        <Button title="Next" onPress={stop} />
+      </View>
     </View>
   );
 }
@@ -85,5 +139,11 @@ const styles = StyleSheet.create({
   albumArtwork: {
     width: 200,
     height: 200,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    width: '80%',
   },
 });
