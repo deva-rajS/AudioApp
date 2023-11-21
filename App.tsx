@@ -1,10 +1,39 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, Text, Button, Image, StyleSheet} from 'react-native';
+import {
+  View,
+  Text,
+  Button,
+  Image,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  TouchableHighlight,
+  Touchable,
+} from 'react-native';
 import Slider from '@react-native-community/slider';
+import {library} from '@fortawesome/fontawesome-svg-core';
+import {
+  faForwardStep,
+  faBackwardStep,
+  faCirclePlay,
+  faPause,
+  faShuffle,
+  faRepeat,
+  faChevronDown,
+  faEllipsis,
+} from '@fortawesome/free-solid-svg-icons';
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
 
-// var Slider = require('react-native-slider');
 var Sound = require('react-native-sound');
-
+library.add(
+  faCirclePlay,
+  faPause,
+  faForwardStep,
+  faBackwardStep,
+  faShuffle,
+  faRepeat,
+  faChevronDown,
+  faEllipsis,
+);
 export default function App() {
   const [buttonText, setButtonText] = useState('Play');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -108,20 +137,63 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Track Title</Text>
+      <View style={styles.header}>
+        <FontAwesomeIcon icon={faChevronDown} size={23} />
+        <Text>Favourite</Text>
+        <FontAwesomeIcon icon={faEllipsis} size={23} />
+      </View>
       <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
+      <Text style={styles.title}>Track Title</Text>
       <Slider
-        style={{width: 200}}
+        style={styles.slider}
         minimumValue={0}
         maximumValue={1}
+        minimumTrackTintColor="#5d6161"
+        maximumTrackTintColor="#5d6161"
+        thumbTintColor="#5d6161"
         value={currentTime / duration}
         onSlidingComplete={seek}
       />
-      <Text>{`${Math.floor(currentTime)} / ${Math.floor(duration)}`}</Text>
+      <View style={styles.timerContainer}>
+        <Text>{`${Math.floor(currentTime)}`}</Text>
+        <Text>{`${Math.floor(duration)}`}</Text>
+      </View>
       <View style={styles.buttonContainer}>
-        <Button title="Previous" onPress={stop} />
-        <Button title={buttonText} onPress={onButtonPress} />
-        <Button title="Next" onPress={stop} />
+        <TouchableHighlight
+          style={styles.btnPlay}
+          onPress={stop}
+          underlayColor="transparent">
+          <FontAwesomeIcon icon={faShuffle} size={23} />
+        </TouchableHighlight>
+        <TouchableHighlight
+          style={styles.btnPlay}
+          onPress={stop}
+          underlayColor="transparent">
+          <FontAwesomeIcon icon={faBackwardStep} size={32} />
+        </TouchableHighlight>
+        <TouchableHighlight
+          style={styles.btnPlay}
+          onPress={onButtonPress}
+          underlayColor="transparent">
+          {isPlaying ? (
+            <FontAwesomeIcon icon={faPause} size={52} />
+          ) : (
+            <FontAwesomeIcon icon={faCirclePlay} size={52} />
+          )}
+        </TouchableHighlight>
+        {/* <Button title="Next" onPress={stop} /> */}
+        <TouchableHighlight
+          style={styles.btnPlay}
+          onPress={stop}
+          underlayColor="transparent">
+          <FontAwesomeIcon icon={faForwardStep} size={32} />
+        </TouchableHighlight>
+        <TouchableHighlight
+          style={styles.btnPlay}
+          onPress={stop}
+          underlayColor="transparent">
+          <FontAwesomeIcon icon={faRepeat} size={23} />
+        </TouchableHighlight>
       </View>
     </View>
   );
@@ -130,20 +202,44 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+  },
+  header: {
+    flexDirection: 'row',
+    width: '90%',
+    justifyContent: 'space-between',
+    marginVertical: 30,
   },
   title: {
     fontSize: 20,
+    alignSelf: 'flex-start',
+    marginLeft: 25,
+    marginBottom: 10,
   },
   albumArtwork: {
-    width: 200,
-    height: 200,
+    width: 300,
+    height: 300,
+    marginBottom: 30,
+  },
+  slider: {
+    width: '95%',
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 20,
-    width: '80%',
+    marginTop: 10,
+    width: '97%',
+  },
+  btnPlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnInner: {
+    fontSize: 70,
+  },
+  timerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '85%',
   },
 });
