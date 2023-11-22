@@ -5,9 +5,7 @@ import {
   Button,
   Image,
   StyleSheet,
-  TouchableWithoutFeedback,
   TouchableHighlight,
-  Touchable,
 } from 'react-native';
 import Slider from '@react-native-community/slider';
 import {library} from '@fortawesome/fontawesome-svg-core';
@@ -142,58 +140,62 @@ export default function App() {
         <Text>Favourite</Text>
         <FontAwesomeIcon icon={faEllipsis} size={23} />
       </View>
-      <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
-      <Text style={styles.title}>Track Title</Text>
-      <Slider
-        style={styles.slider}
-        minimumValue={0}
-        maximumValue={1}
-        minimumTrackTintColor="#5d6161"
-        maximumTrackTintColor="#5d6161"
-        thumbTintColor="#5d6161"
-        value={currentTime / duration}
-        onSlidingComplete={seek}
-      />
-      <View style={styles.timerContainer}>
-        <Text>{`${Math.floor(currentTime)}`}</Text>
-        <Text>{`${Math.floor(duration)}`}</Text>
+      <View style={styles.albumContainer}>
+        <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
       </View>
-      <View style={styles.buttonContainer}>
-        <TouchableHighlight
-          style={styles.btnPlay}
-          onPress={stop}
-          underlayColor="transparent">
-          <FontAwesomeIcon icon={faShuffle} size={23} />
-        </TouchableHighlight>
-        <TouchableHighlight
-          style={styles.btnPlay}
-          onPress={stop}
-          underlayColor="transparent">
-          <FontAwesomeIcon icon={faBackwardStep} size={32} />
-        </TouchableHighlight>
-        <TouchableHighlight
-          style={styles.btnPlay}
-          onPress={onButtonPress}
-          underlayColor="transparent">
-          {isPlaying ? (
-            <FontAwesomeIcon icon={faPause} size={52} />
-          ) : (
-            <FontAwesomeIcon icon={faCirclePlay} size={52} />
-          )}
-        </TouchableHighlight>
-        {/* <Button title="Next" onPress={stop} /> */}
-        <TouchableHighlight
-          style={styles.btnPlay}
-          onPress={stop}
-          underlayColor="transparent">
-          <FontAwesomeIcon icon={faForwardStep} size={32} />
-        </TouchableHighlight>
-        <TouchableHighlight
-          style={styles.btnPlay}
-          onPress={stop}
-          underlayColor="transparent">
-          <FontAwesomeIcon icon={faRepeat} size={23} />
-        </TouchableHighlight>
+      <View style={styles.playerContainer}>
+        <Text style={styles.title}>Track Title</Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={1}
+          minimumTrackTintColor="#5d6161"
+          maximumTrackTintColor="#5d6161"
+          thumbTintColor="#5d6161"
+          value={currentTime / duration}
+          onSlidingComplete={seek}
+        />
+        <View style={styles.timerContainer}>
+          <Text>{`${Math.floor(currentTime)}`}</Text>
+          <Text>{`${Math.floor(duration)}`}</Text>
+        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableHighlight
+            style={styles.btnPlay}
+            onPress={stop}
+            underlayColor="transparent">
+            <FontAwesomeIcon icon={faShuffle} size={23} />
+          </TouchableHighlight>
+          <TouchableHighlight
+            style={styles.btnPlay}
+            onPress={stop}
+            underlayColor="transparent">
+            <FontAwesomeIcon icon={faBackwardStep} size={32} />
+          </TouchableHighlight>
+          <TouchableHighlight
+            style={styles.btnPlay}
+            onPress={onButtonPress}
+            underlayColor="transparent">
+            {isPlaying ? (
+              <FontAwesomeIcon icon={faPause} size={52} />
+            ) : (
+              <FontAwesomeIcon icon={faCirclePlay} size={52} />
+            )}
+          </TouchableHighlight>
+          {/* <Button title="Next" onPress={stop} /> */}
+          <TouchableHighlight
+            style={styles.btnPlay}
+            onPress={stop}
+            underlayColor="transparent">
+            <FontAwesomeIcon icon={faForwardStep} size={32} />
+          </TouchableHighlight>
+          <TouchableHighlight
+            style={styles.btnPlay}
+            onPress={stop}
+            underlayColor="transparent">
+            <FontAwesomeIcon icon={faRepeat} size={23} />
+          </TouchableHighlight>
+        </View>
       </View>
     </View>
   );
@@ -202,33 +204,44 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'column',
     alignItems: 'center',
+    height: '100%',
   },
   header: {
+    flex: 1,
     flexDirection: 'row',
     width: '90%',
     justifyContent: 'space-between',
-    marginVertical: 30,
+    marginTop: 30,
+  },
+  albumContainer: {
+    flex: 6,
+    width: 380,
+  },
+  playerContainer: {
+    flex: 3,
+    width: '100%',
   },
   title: {
     fontSize: 20,
     alignSelf: 'flex-start',
-    marginLeft: 25,
+    marginLeft: 20,
     marginBottom: 10,
   },
   albumArtwork: {
-    width: 300,
-    height: 300,
-    marginBottom: 30,
+    flex: 1,
+    width: undefined,
+    height: undefined,
+    marginBottom: 60,
   },
   slider: {
-    width: '95%',
+    marginHorizontal: 10,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginTop: 10,
-    width: '97%',
   },
   btnPlay: {
     justifyContent: 'center',
@@ -240,6 +253,6 @@ const styles = StyleSheet.create({
   timerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '85%',
+    marginHorizontal: 25,
   },
 });
