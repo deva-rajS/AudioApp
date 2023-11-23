@@ -1,12 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {
-  View,
-  Text,
-  Button,
-  Image,
-  StyleSheet,
-  TouchableHighlight,
-} from 'react-native';
+import {View, Text, Image, StyleSheet, TouchableHighlight} from 'react-native';
 import Slider from '@react-native-community/slider';
 import {library} from '@fortawesome/fontawesome-svg-core';
 import {
@@ -20,6 +13,12 @@ import {
   faEllipsis,
 } from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome';
+import {
+  onButtonPress,
+  playNextTrack,
+  playPreviousTrack,
+  seek,
+} from './src/MyFunctions/Functions';
 
 var Sound = require('react-native-sound');
 library.add(
@@ -32,12 +31,28 @@ library.add(
   faChevronDown,
   faEllipsis,
 );
+
+const Tracks = [
+  {
+    link: 'https://file-examples.com/storage/fe02dbc794655b5e699ae4d/2017/11/file_example_MP3_700KB.mp3',
+    title: 'Sample 1',
+  },
+  {
+    link: 'https://commondatastorage.googleapis.com/codeskulptor-demos/pyman_assets/ateapill.ogg',
+    title: 'Sample 2',
+  },
+  {
+    link: 'https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/lose.ogg',
+    title: 'Sample 3',
+  },
+];
 export default function App() {
-  const [buttonText, setButtonText] = useState('Play');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [resumePosition, setResumePosition] = useState(0);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [audioTrack, setAudioTrack] = useState(Tracks);
   const whoosh = useRef(null);
 
   useEffect(() => {
@@ -47,11 +62,20 @@ export default function App() {
       }
     };
   }, []);
+  useEffect(() => {
+    if (isPlaying) {
+      start();
+    }
+  }, [currentTrackIndex]);
 
   const start = () => {
+    if (whoosh.current) {
+      whoosh.current.release();
+    }
+
     Sound.setCategory('Playback');
     whoosh.current = new Sound(
-      'https://file-examples.com/storage/fe02dbc794655b5e699ae4d/2017/11/file_example_MP3_700KB.mp3',
+      audioTrack[currentTrackIndex].link,
       '',
       error => {
         if (error) {
@@ -61,24 +85,28 @@ export default function App() {
         setDuration(whoosh.current.getDuration());
         setIsPlaying(true);
         if (resumePosition > 0) {
-          // If there is a resume position, set it and resume
           whoosh.current.setCurrentTime(resumePosition);
           whoosh.current.play(success => {
             if (success) {
               setIsPlaying(false);
-              setCurrentTime(0); // Reset currentTime when playback completes
-              whoosh.current.release(); // Release resources
+              setCurrentTime(0);
+              whoosh.current.release();
             } else {
               console.log('playback failed due to audio decoding errors');
             }
           });
         } else {
-          // If no resume position, start from the beginning
           whoosh.current.play(success => {
             if (success) {
-              setIsPlaying(false);
-              setCurrentTime(0); // Reset currentTime when playback completes
-              whoosh.current.release(); // Release resources
+              // setIsPlaying(false);
+              setCurrentTime(0);
+              whoosh.current.release();
+              playNextTrack(
+                currentTrackIndex,
+                setCurrentTrackIndex,
+                stop,
+                audioTrack,
+              );
             } else {
               console.log('playback failed due to audio decoding errors');
             }
@@ -115,24 +143,21 @@ export default function App() {
     }
   };
 
-  const seek = value => {
-    if (whoosh.current) {
-      const newPosition = value * duration;
-      whoosh.current.setCurrentTime(newPosition);
-      setCurrentTime(newPosition);
-    }
+  const playNextTrackHandler = () => {
+    playNextTrack(currentTrackIndex, setCurrentTrackIndex, stop, audioTrack);
   };
 
-  const onButtonPress = async () => {
-    if (isPlaying) {
-      pause();
-      setButtonText('Play');
-    } else {
-      start();
-      setButtonText('Pause');
-    }
+  const playPreviousTrackHandler = () => {
+    playPreviousTrack(currentTrackIndex, setCurrentTrackIndex, stop);
   };
 
+  const onButtonPressHandler = () => {
+    onButtonPress(isPlaying, pause, start);
+  };
+
+  const seekHandler = value => {
+    seek(whoosh, value, duration, setCurrentTime);
+  };
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -144,7 +169,7 @@ export default function App() {
         <Image source={require('./album.jpeg')} style={styles.albumArtwork} />
       </View>
       <View style={styles.playerContainer}>
-        <Text style={styles.title}>Track Title</Text>
+        <Text style={styles.title}>{audioTrack[currentTrackIndex].title}</Text>
         <Slider
           style={styles.slider}
           minimumValue={0}
@@ -153,7 +178,7 @@ export default function App() {
           maximumTrackTintColor="#5d6161"
           thumbTintColor="#5d6161"
           value={currentTime / duration}
-          onSlidingComplete={seek}
+          onSlidingComplete={seekHandler}
         />
         <View style={styles.timerContainer}>
           <Text>{`${Math.floor(currentTime)}`}</Text>
@@ -162,19 +187,19 @@ export default function App() {
         <View style={styles.buttonContainer}>
           <TouchableHighlight
             style={styles.btnPlay}
-            onPress={stop}
+            onPress={playPreviousTrackHandler}
             underlayColor="transparent">
             <FontAwesomeIcon icon={faShuffle} size={23} />
           </TouchableHighlight>
           <TouchableHighlight
             style={styles.btnPlay}
-            onPress={stop}
+            onPress={playPreviousTrackHandler}
             underlayColor="transparent">
             <FontAwesomeIcon icon={faBackwardStep} size={32} />
           </TouchableHighlight>
           <TouchableHighlight
             style={styles.btnPlay}
-            onPress={onButtonPress}
+            onPress={onButtonPressHandler}
             underlayColor="transparent">
             {isPlaying ? (
               <FontAwesomeIcon icon={faPause} size={52} />
@@ -182,16 +207,15 @@ export default function App() {
               <FontAwesomeIcon icon={faCirclePlay} size={52} />
             )}
           </TouchableHighlight>
-          {/* <Button title="Next" onPress={stop} /> */}
           <TouchableHighlight
             style={styles.btnPlay}
-            onPress={stop}
+            onPress={playNextTrackHandler}
             underlayColor="transparent">
             <FontAwesomeIcon icon={faForwardStep} size={32} />
           </TouchableHighlight>
           <TouchableHighlight
             style={styles.btnPlay}
-            onPress={stop}
+            onPress={playNextTrackHandler}
             underlayColor="transparent">
             <FontAwesomeIcon icon={faRepeat} size={23} />
           </TouchableHighlight>
